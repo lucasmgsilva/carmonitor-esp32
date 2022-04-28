@@ -68,7 +68,7 @@ void sendCurrentLocationToAPI (double lat, double lng, double speed){
     json.add("speed", speed);
 
     char path[128];
-    sprintf(path, "/cars/%s", CAR_ID);
+    sprintf(path, "/cars/%s/locations/", CAR_ID);
     
     if (Firebase.RTDB.pushJSON(&fbdo, path, &json)) {
       Serial.println("Localização registrada com sucesso.");
