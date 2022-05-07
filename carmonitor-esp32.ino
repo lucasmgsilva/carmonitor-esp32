@@ -9,8 +9,11 @@
 
 TinyGPSPlus gps;
 
+/* Configurações do Buzzer */
+#define BUZZER 18
+
 /* Configurações do Carro */
-#define CAR_ID "61cf536fe2d293f2a0766871"
+#define CAR_ID "MRN-5208"
 
 /* Firebase */
 FirebaseData fbdo;
@@ -37,6 +40,12 @@ void connectToWiFi(){
   Serial.println();
 }
 
+void tone(byte pin, int freq) {
+  ledcSetup(0, 2000, 8);
+  ledcAttachPin(pin, 0);
+  ledcWriteTone(0, freq);
+}
+
 void setupFirebase(){
   Serial.printf("Versão do cliente firebase: %s\n", FIREBASE_CLIENT_VERSION);
   
@@ -59,7 +68,7 @@ void setup() {
   setupFirebase();
 }
 
-void sendCurrentLocationToAPI (double lat, double lng, double speed){
+void sendCurrentLocationToRTDB (double lat, double lng, double speed){
   Serial.println("Enviando localização atual do carro para o Firebase RTDB.");
   
   if(WiFi.status() == WL_CONNECTED){
@@ -75,8 +84,6 @@ void sendCurrentLocationToAPI (double lat, double lng, double speed){
     if (Firebase.RTDB.updateNode(&fbdo, path, &json)) {
       Serial.println("Localização registrada com sucesso.");
       Serial.println(fbdo.dataPath());
-      Serial.println(fbdo.pushName());
-      Serial.println(fbdo.dataPath() + "/"+ fbdo.pushName());
     } else {
       Serial.println(fbdo.errorReason());
     }
@@ -98,17 +105,35 @@ void getCurrentLocation(){
     double lng = gps.location.lng();
     double speed = gps.speed.kmph();
 
-    sendCurrentLocationToAPI(lat, lng, speed);
-  } /*else {
-    Serial.println("O carro não está se movimentando!");
-  }*/
+    sendCurrentLocationToRTDB(lat, lng, speed);
+  }
+}
+
+void shouldPlayAlarmSound(){
+  if(WiFi.status() == WL_CONNECTED){
+    char path[128];
+    sprintf(path, "/cars/%s/playAlarmSound/", CAR_ID);
+
+    if (Firebase.RTDB.getBool(&fbdo, path)) {
+      if(fbdo.to<bool>()){
+        tone(BUZZER,1500);
+      } else {
+        tone(BUZZER,0);
+      }
+    } else {
+      Serial.println(fbdo.errorReason());
+    }
+  } else {
+    Serial.println("Desconectado do Wi-Fi");
+    connectToWiFi();
+  }
 }
 
 void loop() {
-  if (Firebase.ready()){
-    //Serial.printf("Set int... %s\n", Firebase.RTDB.setInt(&fbdo, F("/"), 27) ? "ok" : fbdo.errorReason().c_str());
+  if (Firebase.ready()){   
     getCurrentLocation();
+    shouldPlayAlarmSound();
   }
   
-  delay(5000);
+ delay(1000);
 }
