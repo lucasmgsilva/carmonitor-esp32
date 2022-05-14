@@ -130,10 +130,10 @@ void shouldPlayAlarmSound(){
 }
 
 void loop() {
-  if (Firebase.ready()){   
+  if (Firebase.ready()){
     getCurrentLocation();
     shouldPlayAlarmSound();
   }
   
- delay(1000);
+ delay(500);
 }
