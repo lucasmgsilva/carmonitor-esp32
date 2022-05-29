@@ -21,6 +21,9 @@ FirebaseAuth auth;
 FirebaseConfig config;
 FirebaseJson json;
 
+double lastLat = 0.0;
+double lastLng = 0.0;
+
 void connectToWiFi(){
   Serial.println();
 
@@ -54,10 +57,10 @@ void setupFirebase(){
   
   config.signer.test_mode = true;
 
-  //Initialize the library with the Firebase authen and config.
+  /* Initialize the library with the Firebase authen and config. */
   Firebase.begin(&config, &auth);
 
-  // Comment or pass false value when WiFi reconnection will control by your code or third party library
+  /* Comment or pass false value when WiFi reconnection will control by your code or third party library */
   Firebase.reconnectWiFi(true);
 }
 
@@ -72,6 +75,8 @@ void sendCurrentLocationToRTDB (double lat, double lng, double speed){
   Serial.println("Enviando localização atual do carro para o Firebase RTDB.");
   
   if(WiFi.status() == WL_CONNECTED){
+    if (speed <= 5) speed = 0;
+    
     json.add("lat", lat);
     json.add("lng", lng);
     json.add("speed", speed);
@@ -84,6 +89,9 @@ void sendCurrentLocationToRTDB (double lat, double lng, double speed){
     if (Firebase.RTDB.updateNode(&fbdo, path, &json)) {
       Serial.println("Localização registrada com sucesso.");
       Serial.println(fbdo.dataPath());
+
+      lastLat = lat;
+      lastLng = lng;
     } else {
       Serial.println(fbdo.errorReason());
     }
@@ -105,7 +113,12 @@ void getCurrentLocation(){
     double lng = gps.location.lng();
     double speed = gps.speed.kmph();
 
-    sendCurrentLocationToRTDB(lat, lng, speed);
+    if (fabs(lat - lastLat) > 0.0001 || fabs(lng - lastLng) > 0.0001){
+      sendCurrentLocationToRTDB(lat, lng, speed);
+    } else {
+      Serial.println("Baixa variação da latitude e/ou longitude da localização do carro.");
+      Serial.println();
+    }
   }
 }
 
