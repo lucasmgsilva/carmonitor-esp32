@@ -3,6 +3,10 @@
 #include <Firebase_ESP_Client.h>
 #include "secrets.h"
 
+/* API */
+#define DATABASE_URL "carmonitor-4fc29-default-rtdb.firebaseio.com"
+#define API_KEY "AIzaSyC01dpBT00At1GwJUwJAPzKBu-mYNX4Z4E"
+
 /* Configurações do GPS */
 #define RXD2 16
 #define TXD2 17
